@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Ristorante Pizzeria — Menù e Lista dei Vini">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Ristorante</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ════════════════════════════════════════════
+       VARIABLES
+    ════════════════════════════════════════════ */
+    :root {
+      --bg:          #F7F6F3;
+      --surface:     #FFFFFF;
+      --border:      #D4D2CB;
+      --border-lt:   #E6E5DF;
+      --text:        #201F1C;
+      --text-muted:  #848178;
+      --gold:        #B8894A;
+      --gold-lt:     rgba(184,137,74,0.10);
+      --gold-hex:    #B8894A;
+      --transition:  0.45s cubic-bezier(0.4, 0, 0.2, 1);
+      /* Safe areas for iOS notch / home indicator */
+      --sat: env(safe-area-inset-top,    0px);
+      --sar: env(safe-area-inset-right,  0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left,   0px);
+    }
+
+    /* ════════════════════════════════════════════
+       RESET & BASE
+    ════════════════════════════════════════════ */
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      width: 100%;
+      height: 100%;
+      /* Prevent elastic overscroll on iOS */
+      overscroll-behavior: none;
+    }
+
+    body {
+      width: 100%;
+      /* Use dvh (dynamic viewport height) — accounts for iOS Safari URL bar */
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Jost', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      /* Prevent text resize on orientation change */
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      /* Remove default button appearance on iOS */
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: manipulation;
+      /* Prevent text selection on double-tap */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ════════════════════════════════════════════
+       CORNER FRAME DECORATION (desktop-only look)
+    ════════════════════════════════════════════ */
+    .frame, .frame-b {
+      display: none; /* Hidden on mobile — shown only via media query below */
+    }
+
+    @media (min-width: 700px) and (hover: hover) {
+      .frame {
+        display: block;
+        position: fixed;
+        top: 22px; right: 22px; bottom: 22px; left: 22px;
+        border: 1px solid var(--border-lt);
+        pointer-events: none;
+        z-index: 5;
+      }
+      .frame::before,
+      .frame::after,
+      .frame-b::before,
+      .frame-b::after {
+        content: '';
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border-style: solid;
+        border-color: var(--gold-hex);
+      }
+      .frame::before  { top: -1px;    left: -1px;  border-width: 2px 0 0 2px; }
+      .frame::after   { top: -1px;    right: -1px; border-width: 2px 2px 0 0; }
+      .frame-b {
+        display: block;
+        position: fixed;
+        top: 22px; right: 22px; bottom: 22px; left: 22px;
+        pointer-events: none;
+        z-index: 5;
+      }
+      .frame-b::before { bottom: -1px; left: -1px;  border-width: 0 0 2px 2px; }
+      .frame-b::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+    }
+
+    /* ════════════════════════════════════════════
+       SCREEN SYSTEM
+    ════════════════════════════════════════════ */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      /* Account for iOS safe areas */
+      padding: calc(2rem + var(--sat)) calc(1.5rem + var(--sar)) calc(2rem + var(--sab)) calc(1.5rem + var(--sal));
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(16px);
+      transition:
+        opacity var(--transition),
+        transform var(--transition),
+        visibility var(--transition);
+      z-index: 10;
+    }
+
+    .screen.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .screen.exit {
+      opacity: 0;
+      transform: translateY(-12px);
+      visibility: hidden;
+    }
+
+    /* ════════════════════════════════════════════
+       COMMON — ORNAMENTAL DIVIDER
+    ════════════════════════════════════════════ */
+    .ornament {
+      display: block;
+      margin: 0 auto;
+      overflow: visible;
+    }
+
+    /* ════════════════════════════════════════════
+       SCREEN 1 — LANGUAGE SELECTION
+    ════════════════════════════════════════════ */
+    #s-lang {
+      background: var(--bg);
+      gap: 0;
+    }
+
+    .rest-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: clamp(2.8rem, 13vw, 6.5rem);
+      letter-spacing: 0.06em;
+      color: var(--text);
+      line-height: 1;
+      text-align: center;
+      margin-bottom: 0.55rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .rest-type {
+      font-weight: 200;
+      font-size: clamp(0.55rem, 2.5vw, 0.62rem);
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 2.4rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ornament-wrap { margin-bottom: 2.4rem; }
+
+    .lang-prompt {
+      font-weight: 200;
+      font-size: clamp(0.55rem, 2.5vw, 0.62rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.8rem;
+      text-align: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .lang-buttons {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0;
+    }
+
+    .lang-sep {
+      width: 1px;
+      height: 46px;
+      background: var(--border-lt);
+      flex-shrink: 0;
+    }
+
+    .lang-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.38rem;
+      /* Min 44px touch target height (Apple HIG) */
+      padding: 1.2rem 2.2rem;
+      min-height: 80px;
+      border: 1px solid var(--border);
+      background: transparent;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      min-width: 100px;
+    }
+
+    .lang-btn + .lang-btn { border-left: none; }
+
+    /* Active state for touch devices */
+    .lang-btn:active {
+      background: var(--gold-lt);
+      border-color: var(--gold-hex);
+    }
+
+    /* Hover for pointer devices */
+    @media (hover: hover) {
+      .lang-btn:hover {
+        background: var(--gold-lt);
+        border-color: var(--gold-hex);
+      }
+      .lang-btn:hover .lang-abbr { color: var(--gold-hex); }
+    }
+
+    .lang-abbr {
+      font-weight: 500;
+      font-size: clamp(0.58rem, 2.5vw, 0.62rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold-hex);
+      position: relative;
+      z-index: 1;
+    }
+
+    .lang-name {
+      font-weight: 300;
+      font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+      letter-spacing: 0.06em;
+      color: var(--text);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ════════════════════════════════════════════
+       SCREEN 2 — CHOICE (MENU / VINI)
+    ════════════════════════════════════════════ */
+    #s-choice {
+      background: var(--bg);
+    }
+
+    .back-btn {
+      position: fixed;
+      /* Adjust for safe area + topbar placement */
+      top: calc(28px + var(--sat));
+      left: calc(24px + var(--sal));
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: none;
+      border: none;
+      padding: 0.5rem 0.5rem 0.5rem 0;
+      /* Minimum 44px touch area */
+      min-height: 44px;
+      min-width: 44px;
+      font-weight: 300;
+      font-size: clamp(0.58rem, 2.5vw, 0.62rem);
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 0.2s ease;
+      z-index: 20;
+    }
+
+    .back-btn:active { color: var(--text); }
+
+    @media (hover: hover) {
+      .back-btn:hover { color: var(--text); }
+      .back-btn:hover svg { transform: translateX(-4px); }
+    }
+
+    .back-btn svg {
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .choice-header {
+      text-align: center;
+      margin-bottom: 2.8rem;
+    }
+
+    .choice-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(1.6rem, 7vw, 2.8rem);
+      letter-spacing: 0.08em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .choice-sub {
+      font-weight: 200;
+      font-size: clamp(0.55rem, 2.2vw, 0.62rem);
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.8rem;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .choice-prompt {
+      font-weight: 300;
+      font-size: clamp(0.68rem, 2.8vw, 0.75rem);
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .choice-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .choice-card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.3rem;
+      /* Comfortable touch target */
+      padding: 1.6rem 2rem;
+      min-height: 80px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      text-align: left;
+      width: 100%;
+    }
+
+    /* Gold shimmer on active (tap) */
+    .choice-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--gold-hex) 50%, transparent 100%);
+      transform: scaleX(0);
+      transition: transform 0.25s ease;
+    }
+
+    .choice-card:active {
+      border-color: var(--gold-hex);
+      background: linear-gradient(135deg, var(--gold-lt) 0%, transparent 60%);
+      transform: scale(0.985);
+    }
+
+    .choice-card:active::after { transform: scaleX(1); }
+
+    @media (hover: hover) {
+      .choice-card:hover {
+        border-color: var(--gold-hex);
+        background: linear-gradient(135deg, var(--gold-lt) 0%, transparent 60%);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.07);
+      }
+      .choice-card:hover::after { transform: scaleX(1); }
+    }
+
+    .card-icon {
+      width: 38px;
+      height: 38px;
+      color: var(--gold-hex);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: clamp(1.3rem, 5.5vw, 1.6rem);
+      letter-spacing: 0.07em;
+      color: var(--text);
+    }
+
+    .card-hint {
+      font-weight: 200;
+      font-size: clamp(0.58rem, 2.3vw, 0.62rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ════════════════════════════════════════════
+       SCREEN 3 — PDF VIEWER
+    ════════════════════════════════════════════ */
+    #s-pdf {
+      background: #1C1B18;
+      padding: 0;
+      justify-content: flex-start;
+    }
+
+    .pdf-topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      /* Height + safe area top */
+      height: calc(52px + var(--sat));
+      padding-top: var(--sat);
+      background: rgba(28, 27, 24, 0.96);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      padding-left: calc(16px + var(--sal));
+      padding-right: calc(16px + var(--sar));
+      z-index: 30;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    .pdf-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.16);
+      /* Minimum 44px touch target */
+      padding: 0.55rem 1rem 0.55rem 0.8rem;
+      min-height: 36px;
+      color: rgba(255,255,255,0.8);
+      font-size: clamp(0.58rem, 2.4vw, 0.64rem);
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      transition: background 0.15s ease, color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .pdf-back-btn:active {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,1);
+    }
+
+    @media (hover: hover) {
+      .pdf-back-btn:hover {
+        background: rgba(255,255,255,0.08);
+        color: rgba(255,255,255,1);
+      }
+    }
+
+    .pdf-back-btn svg { flex-shrink: 0; }
+
+    .pdf-title {
+      flex: 1;
+      margin-left: 1.2rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(0.85rem, 3.8vw, 1.05rem);
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.45);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ─── iOS: inline iframe PDF viewer ─── */
+    #pdf-frame {
+      position: fixed;
+      top: calc(52px + var(--sat));
+      left: var(--sal);
+      right: var(--sar);
+      bottom: var(--sab);
+      width: calc(100% - var(--sal) - var(--sar));
+      height: calc(100dvh - 52px - var(--sat) - var(--sab));
+      border: none;
+      display: none; /* Controlled by JS */
+      background: #fff;
+    }
+
+    /* ─── Android / fallback: open-in-browser screen ─── */
+    .mobile-fallback {
+      position: fixed;
+      top: calc(52px + var(--sat));
+      left: 0; right: 0;
+      bottom: var(--sab);
+      display: none; /* Controlled by JS */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      text-align: center;
+      padding: 2rem calc(2rem + var(--sal)) calc(2rem + var(--sab)) calc(2rem + var(--sar));
+    }
+
+    .mf-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--gold-hex);
+      opacity: 0.75;
+    }
+
+    .mf-text-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .mf-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-style: italic;
+      font-size: 1.4rem;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .mf-subtext {
+      font-weight: 200;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.4);
+      max-width: 240px;
+      line-height: 1.7;
+    }
+
+    /* The primary CTA button */
+    .mobile-open-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 1rem 2.4rem;
+      min-height: 52px;
+      border: 1px solid var(--gold-hex);
+      background: transparent;
+      color: var(--gold-hex);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .mobile-open-btn:active {
+      background: var(--gold-hex);
+      color: #1C1B18;
+    }
+
+    @media (hover: hover) {
+      .mobile-open-btn:hover {
+        background: var(--gold-hex);
+        color: #1C1B18;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       ENTRANCE ANIMATIONS
+    ════════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #s-lang.active .rest-name      { animation: fadeUp 0.8s ease 0.05s both; }
+    #s-lang.active .rest-type      { animation: fadeUp 0.8s ease 0.14s both; }
+    #s-lang.active .ornament-wrap  { animation: fadeUp 0.8s ease 0.22s both; }
+    #s-lang.active .lang-prompt    { animation: fadeUp 0.8s ease 0.30s both; }
+    #s-lang.active .lang-buttons   { animation: fadeUp 0.8s ease 0.38s both; }
+
+    #s-choice.active .choice-header { animation: fadeUp 0.65s ease 0.05s both; }
+    #s-choice.active .choice-cards  { animation: fadeUp 0.65s ease 0.16s both; }
+
+    #s-pdf.active .pdf-topbar { animation: fadeUp 0.4s ease 0s both; }
+
+    /* ════════════════════════════════════════════
+       LANDSCAPE ORIENTATION (mobile)
+    ════════════════════════════════════════════ */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .rest-name      { font-size: clamp(1.8rem, 7vh, 3rem); }
+      .ornament-wrap  { margin-bottom: 1rem; }
+      .rest-type      { margin-bottom: 1rem; }
+      .lang-prompt    { margin-bottom: 1rem; }
+
+      .choice-header  { margin-bottom: 1.2rem; }
+      .choice-cards   { flex-direction: row; max-width: 500px; }
+      .choice-card    { flex-direction: column; min-height: 70px; padding: 1rem 1.6rem; flex: 1; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Frame decorations (visible only on pointer/desktop) -->
+  <div class="frame" aria-hidden="true"></div>
+  <div class="frame-b" aria-hidden="true"></div>
+
+  <!-- ══════════════════════════════════
+       SCREEN 1 — LANGUAGE SELECTION
+  ══════════════════════════════════ -->
+  <section class="screen active" id="s-lang" aria-label="Selezione lingua">
+
+    <h1 class="rest-name" id="rest-name-lang">Antica Osteria</h1>
+    <p  class="rest-type">Ristorante &amp; Pizzeria</p>
+
+    <div class="ornament-wrap">
+      <svg class="ornament" width="260" height="20" viewBox="0 0 260 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="0"   y1="10" x2="104" y2="10" stroke="#B8894A" stroke-width="0.5"/>
+        <circle cx="111" cy="10" r="1.6" fill="#B8894A"/>
+        <rect x="118" y="2" width="16" height="16" transform="rotate(45 126 10)" fill="rgba(184,137,74,0.10)" stroke="#B8894A" stroke-width="0.8"/>
+        <circle cx="126" cy="10" r="1.6" fill="#B8894A"/>
+        <circle cx="141" cy="10" r="1.6" fill="#B8894A"/>
+        <line x1="148" y1="10" x2="260" y2="10" stroke="#B8894A" stroke-width="0.5"/>
+        <line x1="36"  y1="7" x2="36"  y2="13" stroke="#B8894A" stroke-width="0.4" opacity="0.5"/>
+        <line x1="72"  y1="7" x2="72"  y2="13" stroke="#B8894A" stroke-width="0.4" opacity="0.5"/>
+        <line x1="188" y1="7" x2="188" y2="13" stroke="#B8894A" stroke-width="0.4" opacity="0.5"/>
+        <line x1="224" y1="7" x2="224" y2="13" stroke="#B8894A" stroke-width="0.4" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <p class="lang-prompt">Seleziona la lingua &nbsp;·&nbsp; Select language &nbsp;·&nbsp; Sprache wählen</p>
+
+    <div class="lang-buttons" role="group" aria-label="Scelta della lingua">
+      <button class="lang-btn" onclick="selectLang('it')" aria-label="Italiano">
+        <span class="lang-abbr">IT</span>
+        <span class="lang-name">Italiano</span>
+      </button>
+      <div class="lang-sep" aria-hidden="true"></div>
+      <button class="lang-btn" onclick="selectLang('en')" aria-label="English">
+        <span class="lang-abbr">EN</span>
+        <span class="lang-name">English</span>
+      </button>
+      <div class="lang-sep" aria-hidden="true"></div>
+      <button class="lang-btn" onclick="selectLang('de')" aria-label="Deutsch">
+        <span class="lang-abbr">DE</span>
+        <span class="lang-name">Deutsch</span>
+      </button>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════
+       SCREEN 2 — MENU / WINE CHOICE
+  ══════════════════════════════════ -->
+  <section class="screen" id="s-choice" aria-label="Scelta sezione">
+
+    <button class="back-btn" id="btn-back-choice" onclick="goToLang()" aria-label="Torna alla selezione lingua">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span id="back-lbl-choice">Indietro</span>
+    </button>
+
+    <div class="choice-header">
+      <h2 class="choice-name" id="rest-name-choice">Antica Osteria</h2>
+      <p  class="choice-sub"  id="rest-type-choice">Ristorante &amp; Pizzeria</p>
+
+      <svg class="ornament" style="margin-bottom:1.4rem;" width="200" height="18" viewBox="0 0 200 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="0"   y1="9" x2="77"  y2="9" stroke="#B8894A" stroke-width="0.5"/>
+        <circle cx="83" cy="9" r="1.4" fill="#B8894A"/>
+        <rect x="90" y="2" width="14" height="14" transform="rotate(45 97 9)" fill="rgba(184,137,74,0.10)" stroke="#B8894A" stroke-width="0.7"/>
+        <circle cx="97" cy="9" r="1.4" fill="#B8894A"/>
+        <circle cx="111" cy="9" r="1.4" fill="#B8894A"/>
+        <line x1="117" y1="9" x2="200" y2="9" stroke="#B8894A" stroke-width="0.5"/>
+      </svg>
+
+      <p class="choice-prompt" id="choice-prompt">Cosa desiderate consultare?</p>
+    </div>
+
+    <div class="choice-cards">
+
+      <!-- MENU card -->
+      <button class="choice-card" id="card-menu" onclick="openPDF('menu')" aria-label="Apri Menù">
+        <svg class="card-icon" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="13" y1="7"  x2="13" y2="39" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M9 7v8.5A4 4 0 0 0 13 19.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M17 7v8.5A4 4 0 0 1 13 19.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="31" y1="7"  x2="31" y2="39" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M31 7c0 0 7 4.5 7 13H31" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="card-text">
+          <span class="card-label" id="menu-label">Menù</span>
+          <span class="card-hint"  id="menu-hint" >Sfoglia il nostro menù</span>
+        </div>
+      </button>
+
+      <!-- WINE card -->
+      <button class="choice-card" id="card-wine" onclick="openPDF('vini')" aria-label="Apri Lista dei Vini">
+        <svg class="card-icon" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M14 7h18l-2.5 13a8.5 8.5 0 0 1-13 0Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="23" y1="20" x2="23" y2="37" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="16" y1="37" x2="30" y2="37" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M16.5 14.5c2 1.5 9 1.5 11 0" stroke="currentColor" stroke-width="0.7" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+        <div class="card-text">
+          <span class="card-label" id="wine-label">Lista dei Vini</span>
+          <span class="card-hint"  id="wine-hint" >Esplora la nostra selezione</span>
+        </div>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SCREEN 3 — PDF VIEWER
+  ══════════════════════════════════ -->
+  <section class="screen" id="s-pdf" aria-label="Visualizzatore PDF">
+
+    <!-- Top bar -->
+    <div class="pdf-topbar">
+      <button class="pdf-back-btn" id="btn-back-pdf" onclick="goToChoice()" aria-label="Torna alla scelta">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M8.5 2L3.5 6.5L8.5 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="back-lbl-pdf">Indietro</span>
+      </button>
+      <span class="pdf-title" id="pdf-title-label">Antica Osteria</span>
+    </div>
+
+    <!--
+      iOS Safari: renders PDFs natively inside <iframe>.
+      Shown via JS when platform === 'ios'.
+    -->
+    <iframe
+      id="pdf-frame"
+      src="about:blank"
+      title="PDF Viewer"
+      allow="fullscreen"
+      loading="lazy"
+    ></iframe>
+
+    <!--
+      Android Chrome: iframes don't render PDFs inline.
+      We show this screen and call window.open() to use
+      Chrome's built-in PDF viewer (no download, no external app).
+      Shown via JS when platform === 'android'.
+    -->
+    <div class="mobile-fallback" id="mobile-fallback" aria-live="polite">
+      <svg class="mf-icon" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 6h20l10 10v30H12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M32 6v10h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="19" y1="24" x2="34" y2="24" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="19" y1="30" x2="34" y2="30" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="19" y1="36" x2="28" y2="36" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+
+      <div class="mf-text-block">
+        <p class="mf-heading" id="mf-heading-text">Documento pronto</p>
+        <p class="mf-subtext" id="mobile-msg-text">Il documento si è aperto nel browser. Tornate qui con il tasto Indietro.</p>
+      </div>
+
+      <button class="mobile-open-btn" id="mobile-open-btn" onclick="reopenPDF()" aria-label="Apri PDF nel browser">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="mobile-open-text">Apri PDF</span>
+      </button>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════ -->
+  <script>
+    /* ─────────────────────────────────────────────
+       ██  CONFIGURAZIONE  ██
+       Modifica questi valori con i tuoi dati.
+    ───────────────────────────────────────────── */
+    var CONFIG = {
+      restaurantName : 'Antica Osteria',
+      restaurantType : 'Ristorante &amp; Pizzeria',
+
+      /*
+        Percorso dei PDF per lingua.
+        Tutti i file devono essere nella stessa cartella di index.html.
+      */
+      pdf : {
+        menu : {
+          it : 'menu_it.pdf',
+          en : 'menu_en.pdf',
+          de : 'menu_de.pdf'
+        },
+        vini : {
+          it : 'vini_it.pdf',
+          en : 'vini_en.pdf',
+          de : 'vini_de.pdf'
+        }
+      }
+    };
+
+    /* ─────────────────────────────────────────────
+       ██  TRADUZIONI  ██
+    ───────────────────────────────────────────── */
+    var LANG = {
+      it: {
+        prompt     : 'Cosa desiderate consultare?',
+        menuLbl    : 'Men\u00f9',
+        menuHint   : 'Sfoglia il nostro men\u00f9',
+        wineLbl    : 'Lista dei Vini',
+        wineHint   : 'Esplora la nostra selezione',
+        back       : 'Indietro',
+        mfHeading  : 'Documento pronto',
+        mobileMsg  : 'Il documento si \u00e8 aperto nel browser. Tornate qui con il tasto Indietro.',
+        mobileOpen : 'Apri PDF'
+      },
+      en: {
+        prompt     : 'What would you like to view?',
+        menuLbl    : 'Menu',
+        menuHint   : 'Browse our menu',
+        wineLbl    : 'Wine List',
+        wineHint   : 'Explore our selection',
+        back       : 'Back',
+        mfHeading  : 'Document ready',
+        mobileMsg  : 'The document has opened in your browser. Tap Back to return here.',
+        mobileOpen : 'Open PDF'
+      },
+      de: {
+        prompt     : 'Was m\u00f6chten Sie einsehen?',
+        menuLbl    : 'Speisekarte',
+        menuHint   : 'Durchst\u00f6bern Sie unsere Speisekarte',
+        wineLbl    : 'Weinkarte',
+        wineHint   : 'Entdecken Sie unsere Weinauswahl',
+        back       : 'Zur\u00fcck',
+        mfHeading  : 'Dokument bereit',
+        mobileMsg  : 'Das Dokument wurde in Ihrem Browser ge\u00f6ffnet. Tippen Sie auf Zur\u00fcck.',
+        mobileOpen : 'PDF \u00f6ffnen'
+      }
+    };
+
+    /* ─────────────────────────────────────────────
+       ██  PLATFORM DETECTION  ██
+
+       'ios'     → Safari / Chrome on iPhone, iPad, iPod
+                   PDFs render natively in <iframe> — used inline.
+
+       'android' → Chrome / Samsung Internet on Android
+                   iframes don't render PDFs. We open the PDF in a
+                   new tab using Chrome's built-in PDF viewer
+                   (no download, no external app required).
+
+       'desktop' → Fallback for browsers with full PDF iframe support.
+    ───────────────────────────────────────────── */
+    var ua = navigator.userAgent;
+
+    var platform = (function () {
+      /* iPadOS 13+ identifies as Macintosh but has touch */
+      var isIpadOS = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+      if (/iPhone|iPad|iPod/.test(ua) || isIpadOS) return 'ios';
+      if (/Android/.test(ua))                       return 'android';
+      return 'desktop';
+    })();
+
+    /* ─────────────────────────────────────────────
+       ██  STATE  ██
+    ───────────────────────────────────────────── */
+    var currentLang   = 'it';
+    var currentScreen = 's-lang';
+    var currentPdfUrl = '';
+
+    /* ─────────────────────────────────────────────
+       ██  NAVIGATION  ██
+    ───────────────────────────────────────────── */
+    function showScreen(nextId) {
+      var prev = document.getElementById(currentScreen);
+      var next = document.getElementById(nextId);
+
+      prev.classList.add('exit');
+
+      setTimeout(function () {
+        prev.classList.remove('active', 'exit');
+        next.classList.add('active');
+        currentScreen = nextId;
+      }, 280);
+    }
+
+    function selectLang(lang) {
+      currentLang = lang;
+      var t = LANG[lang];
+
+      document.getElementById('choice-prompt').textContent   = t.prompt;
+      document.getElementById('menu-label').textContent      = t.menuLbl;
+      document.getElementById('menu-hint').textContent       = t.menuHint;
+      document.getElementById('wine-label').textContent      = t.wineLbl;
+      document.getElementById('wine-hint').textContent       = t.wineHint;
+      document.getElementById('back-lbl-choice').textContent = t.back;
+      document.getElementById('back-lbl-pdf').textContent    = t.back;
+      document.getElementById('mf-heading-text').textContent = t.mfHeading;
+      document.getElementById('mobile-msg-text').textContent = t.mobileMsg;
+      document.getElementById('mobile-open-text').textContent = t.mobileOpen;
+
+      showScreen('s-choice');
+    }
+
+    function openPDF(type) {
+      var pdfUrl = CONFIG.pdf[type][currentLang];
+      var t      = LANG[currentLang];
+
+      currentPdfUrl = pdfUrl;
+
+      /* Update PDF screen title */
+      var titleStr = CONFIG.restaurantName + '  —  '
+                   + (type === 'menu' ? t.menuLbl : t.wineLbl);
+      document.getElementById('pdf-title-label').textContent = titleStr;
+      document.title = titleStr;
+
+      var frame    = document.getElementById('pdf-frame');
+      var fallback = document.getElementById('mobile-fallback');
+
+      if (platform === 'ios' || platform === 'desktop') {
+        /*
+          iOS Safari and desktop browsers render PDFs natively inside <iframe>.
+          The PDF stays fully within the app — no navigation away, no download.
+        */
+        frame.style.display    = 'block';
+        fallback.style.display = 'none';
+        frame.src = pdfUrl;
+
+      } else {
+        /*
+          Android Chrome: open the PDF in a new browser tab.
+          Chrome's built-in PDF viewer handles it inline — no download dialog,
+          no external app prompt. The user taps Back to return to this screen.
+        */
+        frame.style.display    = 'none';
+        fallback.style.display = 'flex';
+        window.open(pdfUrl, '_blank', 'noopener');
+      }
+
+      showScreen('s-pdf');
+    }
+
+    /* Called when user taps "Apri PDF" button again on Android */
+    function reopenPDF() {
+      if (currentPdfUrl) {
+        window.open(currentPdfUrl, '_blank', 'noopener');
+      }
+    }
+
+    function goToChoice() {
+      /* Free iframe memory */
+      var frame = document.getElementById('pdf-frame');
+      frame.src = 'about:blank';
+      currentPdfUrl = '';
+      document.title = CONFIG.restaurantName;
+      showScreen('s-choice');
+    }
+
+    function goToLang() {
+      showScreen('s-lang');
+    }
+
+    /* ─────────────────────────────────────────────
+       ██  INIT  ██
+    ───────────────────────────────────────────── */
+    (function init() {
+      var name = CONFIG.restaurantName;
+      document.title = name;
+      document.getElementById('rest-name-lang').textContent   = name;
+      document.getElementById('rest-name-choice').textContent = name;
+      document.getElementById('pdf-title-label').textContent  = name;
+    })();
+  </script>
+
+</body>
+</html>
