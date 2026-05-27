@@ -771,8 +771,8 @@
     </div>
 
     <!--
-      iOS Safari: renders PDFs natively inside <iframe>.
-      Shown via JS when platform === 'ios'.
+      Desktop browsers: renders PDFs natively inside <iframe>.
+      Shown via JS when platform === 'desktop'.
     -->
     <iframe
       id="pdf-frame"
@@ -885,7 +885,8 @@
        ██  PLATFORM DETECTION  ██
 
        'ios'     → Safari / Chrome on iPhone, iPad, iPod
-                   PDFs render natively in <iframe> — used inline.
+                   PDFs open in a new Safari tab — avoids zoom/rotation
+                   bugs caused by iOS ignoring PDF URL parameters in iframes.
 
        'android' → Chrome / Samsung Internet on Android
                    iframes don't render PDFs. We open the PDF in a
@@ -960,9 +961,9 @@
       var frame    = document.getElementById('pdf-frame');
       var fallback = document.getElementById('mobile-fallback');
 
-      if (platform === 'ios' || platform === 'desktop') {
+      if (platform === 'desktop') {
         /*
-          iOS Safari and desktop browsers render PDFs natively inside <iframe>.
+          Desktop browsers render PDFs natively inside <iframe> with correct zoom.
           The PDF stays fully within the app — no navigation away, no download.
         */
         frame.style.display    = 'block';
@@ -971,9 +972,13 @@
 
       } else {
         /*
-          Android Chrome: open the PDF in a new browser tab.
-          Chrome's built-in PDF viewer handles it inline — no download dialog,
-          no external app prompt. The user taps Back to return to this screen.
+          iOS Safari and Android Chrome: open the PDF in a new browser tab.
+          On iOS, loading a PDF inside an <iframe> causes broken zoom and
+          rotation because Safari's in-iframe PDF viewer ignores all URL
+          fragment parameters (e.g. #zoom=page-fit) and picks its own scale.
+          Opening in a new tab lets Safari / Chrome render the PDF at the
+          correct zoom level and orientation — no download dialog, no external
+          app prompt. The user taps the native Back button to return here.
         */
         frame.style.display    = 'none';
         fallback.style.display = 'flex';
