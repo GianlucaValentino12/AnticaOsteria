@@ -945,43 +945,44 @@
       showScreen('s-choice');
     }
 
-    function openPDF(type) {
-      var pdfUrl = CONFIG.pdf[type][currentLang];
-      var t      = LANG[currentLang];
+function openPDF(type) {
+  var pdfUrl = CONFIG.pdf[type][currentLang];
+  var t      = LANG[currentLang];
 
-      currentPdfUrl = pdfUrl;
+  currentPdfUrl = pdfUrl;
 
-      /* Update PDF screen title */
-      var titleStr = CONFIG.restaurantName + '  —  '
-                   + (type === 'menu' ? t.menuLbl : t.wineLbl);
-      document.getElementById('pdf-title-label').textContent = titleStr;
-      document.title = titleStr;
+  /* Update PDF screen title */
+  var titleStr = CONFIG.restaurantName + '  —  '
+               + (type === 'menu' ? t.menuLbl : t.wineLbl);
+  document.getElementById('pdf-title-label').textContent = titleStr;
+  document.title = titleStr;
 
-      var frame    = document.getElementById('pdf-frame');
-      var fallback = document.getElementById('mobile-fallback');
+  var frame    = document.getElementById('pdf-frame');
+  var fallback = document.getElementById('mobile-fallback');
 
-      if (platform === 'ios' || platform === 'desktop') {
-        /*
-          iOS Safari and desktop browsers render PDFs natively inside <iframe>.
-          The PDF stays fully within the app — no navigation away, no download.
-        */
-        frame.style.display    = 'block';
-        fallback.style.display = 'none';
-        frame.src = pdfUrl;
+  if (platform === 'desktop') {
+    /*
+      I browser desktop caricano i PDF nativamente dentro l'<iframe> senza problemi.
+      Il PDF rimane incorporato nella pagina web.
+    */
+    frame.style.display    = 'block';
+    fallback.style.display = 'none';
+    frame.src = pdfUrl;
 
-      } else {
-        /*
-          Android Chrome: open the PDF in a new browser tab.
-          Chrome's built-in PDF viewer handles it inline — no download dialog,
-          no external app prompt. The user taps Back to return to this screen.
-        */
-        frame.style.display    = 'none';
-        fallback.style.display = 'flex';
-        window.open(pdfUrl, '_blank', 'noopener');
-      }
+  } else {
+    /*
+      iOS (iPhone/iPad) e Android Mobile: aprono il PDF in una nuova scheda.
+      Questo risolve definitivamente il bug dello zoom/storto su Safari iOS.
+      I clienti vedranno la schermata di fallback col pulsante sul sito, 
+      mentre il PDF si aprirà a tutto schermo, dritto e perfettamente zoomabile.
+    */
+    frame.style.display    = 'none';
+    fallback.style.display = 'flex';
+    window.open(pdfUrl, '_blank', 'noopener');
+  }
 
-      showScreen('s-pdf');
-    }
+  showScreen('s-pdf');
+}
 
     /* Called when user taps "Apri PDF" button again on Android */
     function reopenPDF() {
