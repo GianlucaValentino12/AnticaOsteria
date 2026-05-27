@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -723,7 +723,7 @@
     <div class="choice-cards">
 
       <!-- MENU card -->
-      <button class="choice-card" id="card-menu" onclick="('menu')" aria-label="Apri Menù">
+      <button class="choice-card" id="card-menu" onclick="openPDF('menu')" aria-label="Apri Menù">
         <svg class="card-icon" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="13" y1="7"  x2="13" y2="39" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
           <path d="M9 7v8.5A4 4 0 0 0 13 19.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -738,7 +738,7 @@
       </button>
 
       <!-- WINE card -->
-      <button class="choice-card" id="card-wine" onclick="('vini')" aria-label="Apri Lista dei Vini">
+      <button class="choice-card" id="card-wine" onclick="openPDF('vini')" aria-label="Apri Lista dei Vini">
         <svg class="card-icon" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M14 7h18l-2.5 13a8.5 8.5 0 0 1-13 0Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
           <line x1="23" y1="20" x2="23" y2="37" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -802,7 +802,7 @@
         <p class="mf-subtext" id="mobile-msg-text">Il documento si è aperto nel browser. Tornate qui con il tasto Indietro.</p>
       </div>
 
-      <button class="mobile-open-btn" id="mobile-open-btn" onclick="re()" aria-label="Apri PDF nel browser">
+      <button class="mobile-open-btn" id="mobile-open-btn" onclick="reopenPDF()" aria-label="Apri PDF nel browser">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -946,43 +946,42 @@
     }
 
     function openPDF(type) {
-  var pdfUrl = CONFIG.pdf[type][currentLang];
-  var t      = LANG[currentLang];
+      var pdfUrl = CONFIG.pdf[type][currentLang];
+      var t      = LANG[currentLang];
 
-  currentPdfUrl = pdfUrl;
+      currentPdfUrl = pdfUrl;
 
-  /* Update PDF screen title */
-  var titleStr = CONFIG.restaurantName + '  —  '
-               + (type === 'menu' ? t.menuLbl : t.wineLbl);
-  document.getElementById('pdf-title-label').textContent = titleStr;
-  document.title = titleStr;
+      /* Update PDF screen title */
+      var titleStr = CONFIG.restaurantName + '  —  '
+                   + (type === 'menu' ? t.menuLbl : t.wineLbl);
+      document.getElementById('pdf-title-label').textContent = titleStr;
+      document.title = titleStr;
 
-  var frame    = document.getElementById('pdf-frame');
-  var fallback = document.getElementById('mobile-fallback');
+      var frame    = document.getElementById('pdf-frame');
+      var fallback = document.getElementById('mobile-fallback');
 
-  if (platform === 'desktop') {
-    /*
-      I browser desktop caricano i PDF nativamente dentro l'<iframe> senza problemi.
-      Il PDF rimane incorporato nella pagina web.
-    */
-    frame.style.display    = 'block';
-    fallback.style.display = 'none';
-    frame.src = pdfUrl;
+      if (platform === 'ios' || platform === 'desktop') {
+        /*
+          iOS Safari and desktop browsers render PDFs natively inside <iframe>.
+          The PDF stays fully within the app — no navigation away, no download.
+        */
+        frame.style.display    = 'block';
+        fallback.style.display = 'none';
+        frame.src = pdfUrl;
 
-  } else {
-    /*
-      iOS (iPhone/iPad) e Android Mobile: aprono il PDF in una nuova scheda.
-      Questo risolve definitivamente il bug dello zoom/storto su Safari iOS.
-      I clienti vedranno la schermata di fallback col pulsante sul sito, 
-      mentre il PDF si aprirà a tutto schermo, dritto e perfettamente zoomabile.
-    */
-    frame.style.display    = 'none';
-    fallback.style.display = 'flex';
-    window.open(pdfUrl, '_blank', 'noopener');
-  }
+      } else {
+        /*
+          Android Chrome: open the PDF in a new browser tab.
+          Chrome's built-in PDF viewer handles it inline — no download dialog,
+          no external app prompt. The user taps Back to return to this screen.
+        */
+        frame.style.display    = 'none';
+        fallback.style.display = 'flex';
+        window.open(pdfUrl, '_blank', 'noopener');
+      }
 
-  showScreen('s-pdf');
-}
+      showScreen('s-pdf');
+    }
 
     /* Called when user taps "Apri PDF" button again on Android */
     function reopenPDF() {
